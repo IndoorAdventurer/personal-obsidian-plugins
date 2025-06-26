@@ -1,0 +1,9 @@
+{
+	"id": "fitness-tracker-vincent",
+	"name": "FitnessTracker",
+	"version": "0.1.0",
+	"minAppVersion": "0.15.0",
+	"description": "For tracking fitness exercises the way Vincent prefers.",
+	"author": "Vincent Tonkes",
+	"isDesktopOnly": false
+}

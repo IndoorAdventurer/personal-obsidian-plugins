@@ -5,4 +5,4 @@ daily :-)
 ## Individual Plugins
 The individual plugins are: 
 - [ZettelSuit](zettelsuite-vincent/README.md): a collection of tools to remove friction from my Zettelkasten workflow.
-- FitnessTracker: for tracking workouts and progress on individual exercises.
+- [FitnessTracker](fitness-tracker-vincent/README.md): for tracking workouts and progress on individual exercises.
