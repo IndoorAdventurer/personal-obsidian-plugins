@@ -1,0 +1,9 @@
+{
+	"id": "zettelsuite-vincent",
+	"name": "Zettelsuite",
+	"version": "0.1.0",
+	"minAppVersion": "0.15.0",
+	"description": "Collection of tools to streamline my Zettelkasten pipeline.",
+	"author": "Vincent Tonkes",
+	"isDesktopOnly": false
+}
