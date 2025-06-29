@@ -1,0 +1,28 @@
+.vincent-fitness-padding-div {
+    padding-bottom: 0.5em;
+}
+
+.vincent-fitness-custom-heading {
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.vincent-fitness-set {
+    background-color: var(--background-primary);
+    margin-bottom: 0.3em;
+    padding: 0.5em;
+    border-radius: var(--button-radius);
+    display: flex;
+    align-items: center;
+    gap: 0.9ch;
+}
+
+.vincent-fitness-set-number-input {
+    width: 7ch;
+}
+
+.vincent-fitness-btn-box {
+    display: flex;
+    align-items: center;
+    gap: 1ch;
+}

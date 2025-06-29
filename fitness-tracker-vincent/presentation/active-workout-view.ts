@@ -1,0 +1,256 @@
+import { FitnessSet } from "model/exercise-session";
+import Workout, { WorkoutExerciseItem } from "model/workout";
+import { App, Component, MarkdownRenderer } from "obsidian";
+
+
+/**
+ * For showing the workout you are currently doing or are about to do.
+ */
+export default class ActiveWorkoutView {
+    workout: Workout;
+    app: App;
+    container: HTMLElement;
+
+    /**
+     * @param workout Workout data object to draw
+     * @param parent parent HTML element to draw the interface inside of.
+     */
+    constructor(workout: Workout, app: App, parent: HTMLElement) {
+        this.workout = workout;
+        this.app = app;
+        this.container = parent.createDiv({cls: "active-workout-container"});
+    }
+    
+    /**
+     * Draws the interactive user interface for a workout session. Clears
+     * container first
+     */
+    public drawWorkout() {
+        this.container.empty()
+        this.container.createEl("h2", {text: "Workout Session"}).style.marginBlockEnd = "0";
+        this.container.createEl("b", {text: this.workout.workoutName}).style.color = "var(--text-muted)";
+
+        
+        // TODO: header for time tracking and break stopwatch
+        
+        
+        for (const e of this.workout.exercises) {
+            const container = this.makeExerciseContainer(e, this.container);
+            this.drawExerciseContent(e, container);
+        }
+    }
+
+    /**
+     * Visualizes al the data of a single exercise
+     * @param ex The exercise
+     * @param el The container to draw it into (assumed to be for just this
+     * exercise, because will clear on redraw).
+     */
+    private drawExerciseContent(ex: WorkoutExerciseItem, el: HTMLElement) {
+        // TODO: show link to note and possibly image here
+
+        // Showing personal notes:
+        el.createEl("div", {
+            text: "Personal Notes",
+            cls: "vincent-fitness-custom-heading"});
+        this.renderMarkdown(ex.exercise.personalNotes, el, "")
+
+        // Showing last comment notes:
+        if (ex.exercise.latestComment) {
+            el.createEl("div", {
+                text: "Most recent comment",
+                cls: "vincent-fitness-custom-heading"});
+            this.renderMarkdown(ex.exercise.latestComment, el, "")
+        }
+
+        // Showing sets:
+        el.createEl("div", {
+            text: "Sets",
+            cls: "vincent-fitness-custom-heading"});
+
+        let status: "done" | "todo" = "done";
+        const processSet = (set: FitnessSet) => {
+            const [cb, repsI, weightI] = this.drawSet(set, el, status);
+            
+            // Toogle if a set is done via checkbox:
+            cb?.addEventListener("change", () => {
+                Workout.toggleSetDone(ex, set);
+                el.empty();
+                this.drawExerciseContent(ex, el);
+            });
+
+            // Reps changed (no need to redraw: user kinda did it for us):
+            repsI?.addEventListener("change",
+                () => set.repetitions = parseInt(repsI.value));
+            
+            // Weight changed (no need to redraw: user did it for us):
+            weightI?.addEventListener("change",
+                () => set.weight = parseFloat(weightI.value));
+        }
+        ex.done.forEach(processSet);
+        status = "todo";
+        ex.todo.forEach(processSet);
+
+        // Button to add extra set:
+        const btnBox = el.createDiv({cls: "vincent-fitness-btn-box"})
+        const addBtn = btnBox.createEl("button", {text: "Add Set"});
+        addBtn.addEventListener("click", () => {
+            Workout.addSet(ex);
+            el.empty();
+            this.drawExerciseContent(ex, el);
+        })
+
+        const delBtn = btnBox.createEl("button", {text: "Delete Unfinished Sets"});
+        delBtn.addEventListener("click", () => {
+            ex.todo = [];
+            el.empty();
+            this.drawExerciseContent(ex, el);
+        })
+    }
+
+    /**
+     * Draw a single set
+     * @param set The Set data structure (reps, weights, unit)
+     * @param el HTML element to add to
+     * @param status if it is a completed set or an unfinished one
+     * @returns list containing checkbox element, repetitions input element and
+     *      weight input element, so we can add action listeners to it outside
+     *      of this method.
+     */
+    private drawSet(set: FitnessSet, el: HTMLElement, status: "todo" | "done"): (HTMLInputElement | null)[] {
+        const div = el.createDiv({cls: "vincent-fitness-set"});
+        const checkbox = div.createEl("input", {type: "checkbox"});
+        div.createEl("span", {text: "Set of"});
+        const reps = div.createEl("input", {
+            type: "number",
+            cls: "vincent-fitness-set-number-input",
+            value: set.repetitions.toString()});
+        div.createEl("span", {text: "reps"});
+
+        let weight: HTMLInputElement | null = null;
+        if (set.unit !== "bodyweight") {
+            div.createEl("span", {text: "×"});
+            weight = div.createEl("input", {
+                type: "number",
+                cls: "vincent-fitness-set-number-input",
+                value: set.weight.toString()});
+            div.createEl("span", {text: set.unit});
+        }
+
+        if (status === "done") {
+            div.style.opacity = "0.5";
+            checkbox.checked = true;
+        }
+
+        return [checkbox, reps, weight];
+    }
+
+    /**
+     * Makes a container div to put the exercise contents into. Made to look like
+     * a callout and is collapsible.
+     * @param ex The exercise (to extract name from it)
+     * @param el The element to add this container to.
+     * @returns HTML element we can start putting stuff in
+     */
+    private makeExerciseContainer(
+        ex: WorkoutExerciseItem,
+        el: HTMLElement
+    ): HTMLElement {
+        // TODO: maybe also add those two outer ones
+        
+        // Creating the callout div:
+        const cDiv = el.createDiv(
+            {cls: "callout is-collapsible is-collapsed"})
+        cDiv.setAttr("data-callout", "note");
+        cDiv.setAttr("data-callout-fold", "-");
+
+        // Creating the title and arrow icon:
+        const titleDiv = cDiv.createDiv({cls: "callout-title"});
+        titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.notePath});
+        const icon = titleDiv.createDiv({cls: "callout-fold is-collapsed"});
+        icon.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="svg-icon lucide-chevron-down">
+            <path d="m6 9 6 6 6-6"></path>
+        </svg>`;
+
+        // And now the actual contents:
+        const contents = cDiv.createDiv({cls: "callout-content"});
+        contents.style.display = "none";
+
+        // Add animations:
+        this.animateExerciseContainer(cDiv, titleDiv, icon, contents);
+
+        // Add some spacing between exercises:
+        el.createDiv({cls: "vincent-fitness-padding-div"});
+        return contents;
+    }
+
+    /**
+     * The container from makeExerciseContainer can be folded in and out. This
+     * method handles the animations.
+     * @param cDiv The callout div (the outer most div of the container)
+     * @param titleDiv Where you can click on to expand/retract
+     * @param icon The icon that has an animation
+     * @param contents The contents that gets hidden on retraction
+     */
+    private animateExerciseContainer(
+        cDiv: HTMLElement,
+        titleDiv: HTMLElement,
+        icon: HTMLElement,
+        contents: HTMLElement
+    ) {
+        let isCollapsed = true;
+        contents.style.transition = "height 0.1s ease-out";
+        
+        titleDiv.addEventListener("click", () => {
+            isCollapsed = !isCollapsed;
+            if (isCollapsed) {
+                cDiv.addClass("is-collapsed");
+                icon.addClass("is-collapsed");
+
+                const height = contents.scrollHeight;
+                contents.style.height = height + "px";
+                requestAnimationFrame(() => contents.style.height = "0px")
+                setTimeout(() => contents.style.display = "none", 100);
+
+            } else {
+                cDiv.removeClass("is-collapsed");
+                icon.removeClass("is-collapsed");
+
+                contents.style.display = "";
+                contents.style.height = "0px";
+
+                setTimeout(() => contents.style.height = "", 100)
+                requestAnimationFrame(() => {
+                    const height = contents.scrollHeight;
+                    contents.style.height = height + "px";
+                })
+
+
+            }
+        })
+    }
+
+    /**
+     * Convenience wrapper around MarkdownRenderer.render. Ignoring the fact that
+     * it returns a promise
+     * @param markdown The string of markdown source code to render
+     * @param el HTML element to add the contents to
+     * @param sourcePath Path where markdown came from. Needed for WikiLinks.
+     */
+    private renderMarkdown(
+        markdown: string,
+        el: HTMLElement,
+        sourcePath: string) {
+        MarkdownRenderer.render(
+            this.app,
+            markdown,
+            el,
+            "", // TODO: replace with path of exercise note for proper links.
+            new Component()
+        ).catch(() =>
+            console.log(`Markdown from "${sourcePath}" could not be shown.`));
+    }
+};
