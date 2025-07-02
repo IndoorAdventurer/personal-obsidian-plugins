@@ -1,3 +1,4 @@
+import Exercise from 'model/exercise';
 import Workout from 'model/workout';
 import { MarkdownPostProcessorContext, parseYaml, Plugin, stringifyYaml } from 'obsidian';
 import ActiveWorkoutView from 'presentation/active-workout-view';
@@ -7,63 +8,73 @@ export default class FitnessPlugin extends Plugin {
 	
 	async onload() {
 		
+		
+		
+		
 		this.registerMarkdownCodeBlockProcessor("fitness-tracker",
-			(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+			async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+				
+				console.log("Loading exercise file")
+				
+				const exercise = new Exercise(this.app);
+				await exercise.loadFromFile("Dumbbell Bench Press");
+				
+				
+				
+				// const workout: Workout = {
+				// 	workoutName: "Push Day Workout",
+				// 	startTime: 100,
+				// 	endTime: null,
+				// 	exercises: [
+				// 		{
+				// 			exercise: {
+				// 				notePath: "Dumbbell bench press",
+				// 				currentVolume: [],
+				// 				recordVolume: [],
+				// 				personalNotes: "Keep going.",
+				// 				latestComment: "Went well."
+				// 			},
+				// 			comment: "Went well",
+				// 			done: [
+				// 				{repetitions: 10, weight: 20, unit: "kg"},
+				// 			],
+				// 			todo: [
+				// 				{repetitions: 10, weight: 30, unit: "kg"},
+				// 				{repetitions: 10, weight: 40, unit: "kg"},
+				// 			]
+				// 		},
+				// 		{
+				// 			exercise: {
+				// 				notePath: "Assisted pull-ups",
+				// 				currentVolume: [],
+				// 				recordVolume: [],
+				// 				personalNotes: "Keep **going**.\n - Aaap\n - Noot\n - Mies",
+				// 				latestComment: "Went well."
+				// 			},
+				// 			comment: "Went well",
+				// 			done: [],
+				// 			todo: [
+				// 				{repetitions: 10, weight: 1, unit: "bodyweight"},
+				// 				{repetitions: 10, weight: 1, unit: "bodyweight"},
+				// 			]
+				// 		},
+				// 		{
+				// 			exercise: {
+				// 				notePath: "Romanian deadlifts",
+				// 				currentVolume: [],
+				// 				recordVolume: [],
+				// 				personalNotes: "This one was ~~not~~ hard!",
+				// 				latestComment: ""
+				// 			},
+				// 			comment: "Went well",
+				// 			done: [],
+				// 			todo: []
+				// 		},
+				// 	]
+				// };
 
-				const workout: Workout = {
-					workoutName: "Push Day Workout",
-					startTime: 100,
-					endTime: null,
-					exercises: [
-						{
-							exercise: {
-								notePath: "Dumbbell bench press",
-								currentVolume: [],
-								recordVolume: [],
-								personalNotes: "Keep going.",
-								latestComment: "Went well."
-							},
-							comment: "Went well",
-							done: [
-								{repetitions: 10, weight: 20, unit: "kg"},
-							],
-							todo: [
-								{repetitions: 10, weight: 30, unit: "kg"},
-								{repetitions: 10, weight: 40, unit: "kg"},
-							]
-						},
-						{
-							exercise: {
-								notePath: "Assisted pull-ups",
-								currentVolume: [],
-								recordVolume: [],
-								personalNotes: "Keep **going**.\n - Aaap\n - Noot\n - Mies",
-								latestComment: "Went well."
-							},
-							comment: "Went well",
-							done: [],
-							todo: [
-								{repetitions: 10, weight: 1, unit: "bodyweight"},
-								{repetitions: 10, weight: 1, unit: "bodyweight"},
-							]
-						},
-						{
-							exercise: {
-								notePath: "Romanian deadlifts",
-								currentVolume: [],
-								recordVolume: [],
-								personalNotes: "This one was ~~not~~ hard!",
-								latestComment: ""
-							},
-							comment: "Went well",
-							done: [],
-							todo: []
-						},
-					]
-				};
-
-				const aView = new ActiveWorkoutView(workout, this.app, el);
-				aView.drawWorkout();
+				// const aView = new ActiveWorkoutView(workout, this.app, el);
+				// aView.drawWorkout();
 				
 
 
