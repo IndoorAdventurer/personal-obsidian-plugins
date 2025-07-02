@@ -92,7 +92,7 @@ export default class ZettelSuiteView extends ItemView {
     author={Tonkes, Vincent},
     journal={Journal for Vincent Lovers},
     year={1996}
-}`)
+}`);
                 bib_item = text;
                 text.onChange(value => {
                     // Autofilling from bibtex if applicable
@@ -102,7 +102,9 @@ export default class ZettelSuiteView extends ItemView {
                     ref_title?.setValue(partial_def.title!);
                     ref_authors?.setValue(partial_def.authors!.join("; "));
                     ref_pubdate?.setValue(partial_def.pubdate!);
-                })
+                });
+                text.inputEl.setAttr("rows", "8");
+                text.inputEl.style.width = "100%"; // TODO: see how they do it for input area
             });
         
         let ref_title: TextComponent | null = null;

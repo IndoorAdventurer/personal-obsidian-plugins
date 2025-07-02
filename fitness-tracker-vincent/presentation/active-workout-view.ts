@@ -106,6 +106,18 @@ export default class ActiveWorkoutView {
             el.empty();
             this.drawExerciseContent(ex, el);
         })
+
+        // Area to comment on how exercise went
+        el.createDiv({cls: "vincent-fitness-padding-div"});
+        el.createEl("div", {
+            text: "Exercise Comments",
+            cls: "vincent-fitness-custom-heading"});
+        const commentsSpace = el.createEl("textarea");
+        commentsSpace.setAttr("placeholder", "How did it go?");
+        commentsSpace.setAttr("rows", "3");
+        commentsSpace.style.width = "100%";
+        commentsSpace.addEventListener("change",
+            () => ex.comment = commentsSpace.value);
     }
 
     /**
