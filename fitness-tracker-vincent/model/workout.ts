@@ -1,4 +1,4 @@
-import { Notice } from "obsidian";
+import { App, Notice, parseYaml, stringifyYaml } from "obsidian";
 import Exercise from "./exercise";
 import { ExerciseSession, FitnessSet } from "./exercise-session";
 
@@ -30,6 +30,86 @@ export default class Workout {
         this.exercises = [];
     }
 
+    /**
+     * Factory function. Returns a `Workout` object from a yaml string
+     */
+    static async workoutFromYaml(yamlStr: string, app: App): Promise<Workout> {
+        const yamlObj = parseYaml(yamlStr);
+        
+        const name = yamlObj["workout-name"] || yamlObj["workoutName"] || undefined;
+        if (!name)
+            throw Error(`Make sure you give your workout a name (workout-name: "Name")`);
+        const wo = new Workout(name);
+        wo.startTime = yamlObj.startTime || null;
+        wo.endTime = yamlObj.endTime || null;
+
+        // Parse the rest of the data. Either a new workout or a reload:
+        if ("exercise-list" in yamlObj)
+            await this.exercisesFromYamlFresh(yamlObj, wo, app);
+        else if ("exercises" in yamlObj)
+            await this.exercisesFromYamlReload(yamlObj, wo, app);
+        else {
+            const eMsg = `Can't parse workout. Make sure you specify "exercise-list".`;
+            new Notice(eMsg);
+            throw Error(eMsg);
+        }
+        
+        return wo;
+    }
+
+    /**
+     * @returns string containing a yaml representation of this object
+     */
+    public toYaml(): string {
+        const data = {
+            ...this,
+            exercises: this.exercises.map(item => {
+                return {...item, exercise: item.exercise.notePath};
+            })
+        };
+
+        return stringifyYaml(data);
+    }
+
+    /**
+     * Loading exercises from a fresh new workout (i.e. yaml written by human)
+     */
+    private static async exercisesFromYamlFresh(yamlObj: any, wo: Workout, app: App) {
+        for (const el of yamlObj["exercise-list"]) {
+            if (!(el[0] && el[0][0] && typeof el[0][0] === "string" && el[0][0].length > 1)) {
+                const eMsg = "Make sure exercise-list is a list of [[WikiLinks]].";
+                new Notice(eMsg);
+                throw Error(eMsg);
+            }
+            
+            const exercise = new Exercise(app);
+            await exercise.loadFromFile(el[0][0]);
+
+            wo.exercises.push({
+                exercise: exercise,
+                comment: "",
+                done: [],
+                todo: exercise.currentVolume
+            });
+        }
+    }
+
+    /**
+     * Loading exercises from a non-fresh workout (i.e. the GUI reloaded while
+     * a workout had already started).
+     */
+    private static async exercisesFromYamlReload(yamlObj: any, wo: Workout, app: App) {
+        for (const data of yamlObj["exercises"]) {
+            const exercise = new Exercise(app);
+            await exercise.loadFromFile(data["exercise"]);
+            
+            wo.exercises.push({
+                ...data,
+                exercise: exercise
+            })
+        }
+    }
+    
     /**
      * Toggles set between done and not done.
      * @param item 

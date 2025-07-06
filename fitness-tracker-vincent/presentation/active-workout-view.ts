@@ -50,10 +50,12 @@ export default class ActiveWorkoutView {
         // TODO: show link to note and possibly image here
 
         // Showing personal notes:
-        el.createEl("div", {
-            text: "Personal Notes",
-            cls: "vincent-fitness-custom-heading"});
-        this.renderMarkdown(ex.exercise.personalNotes, el, "")
+        if (ex.exercise.personalNotes) {
+            el.createEl("div", {
+                text: "Personal Notes",
+                cls: "vincent-fitness-custom-heading"});
+            this.renderMarkdown(ex.exercise.personalNotes, el, "")
+        }
 
         // Showing last comment notes:
         if (ex.exercise.latestComment) {

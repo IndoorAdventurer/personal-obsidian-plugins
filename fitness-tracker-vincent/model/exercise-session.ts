@@ -1,4 +1,4 @@
-const kgAlias = ["kg", "kilogram"];
+const kgAlias = ["kg", "kilogram", "kilo", "kilos"];
 
 /**.
  * Maps standard way of writing it to all allowed ways of writing it:

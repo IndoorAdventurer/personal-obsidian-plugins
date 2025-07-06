@@ -11,13 +11,38 @@ export default class FitnessPlugin extends Plugin {
 		
 		
 		
-		this.registerMarkdownCodeBlockProcessor("fitness-tracker",
+		this.registerMarkdownCodeBlockProcessor("fitness-workout",
 			async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 				
-				console.log("Loading exercise file")
+				const workout = await Workout.workoutFromYaml(source, this.app);
+				const aView = new ActiveWorkoutView(workout, this.app, el);
+				aView.drawWorkout();
+
+				console.log(workout);
+
+				// console.log(workout.toYaml());
+
+				// console.log(ctx);
+				// console.log(el);
+				// console.log(ctx.getSectionInfo(el));
+				// const sInfo = ctx.getSectionInfo(el);
+				// if (!sInfo) throw Error("Could not find block");
+				// const {lineStart, lineEnd} = sInfo;
+
+				// const newBlock = '```fitness-workout\nworkout-name: "Hoi"\nexercise-list:\n - [[Dumbbell Bench Press]]\n```\n';
 				
-				const exercise = new Exercise(this.app);
-				await exercise.loadFromFile("Dumbbell Bench Press");
+				// const editor = this.app.workspace.activeEditor?.editor;
+				// if (!editor) throw Error("No active editor!");
+
+				// setTimeout(() => {
+				// 	editor.replaceRange(newBlock, {line: lineStart, ch: 0}, {line: lineEnd+1, ch:0});
+				// 	console.log("Change made!");
+				// }, 5000);
+				
+				// console.log("Loading exercise file")
+				
+				// const exercise = new Exercise(this.app);
+				// await exercise.loadFromFile("Dumbbell Bench Press");
 				
 				
 				

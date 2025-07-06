@@ -30,7 +30,10 @@ export default class Exercise {
      * Load all relevant data from an exercise note.
      */
     public async loadFromFile(fileName: string) {
-        // TODO: way more robust version for getting the file name
+        // TODO: way more robust version for getting the file name. Will get
+        // back to this once I create settings because then i'll specify the
+        // exercise directory, which should be the first place to look (see
+        // zettelsuite code context menu code).
         const file = this.app.vault
             .getAbstractFileByPath(normalizePath(fileName + ".md"));
         if (!file || !(file instanceof(TFile)))
@@ -39,10 +42,11 @@ export default class Exercise {
         const frontmatter = cache?.frontmatter;
         
         this.notePath = fileName;
-        this.currentVolume = frontmatter?.["current-volume"].map(parseFitnessSet);
-        this.recordVolume = frontmatter?.["record-volume"].map(parseFitnessSet);
-        this.parsePersonalNotes(file, cache);
-        this.latestComment = frontmatter?.["latest-comment"];
+        // currentVolume should be set, but I handle this in workout.ts:
+        this.currentVolume = frontmatter?.["current-volume"].map(parseFitnessSet) || [];
+        this.recordVolume = frontmatter?.["record-volume"]?.map(parseFitnessSet) || [];
+        await this.parsePersonalNotes(file, cache);
+        this.latestComment = frontmatter?.["latest-comment"] || "";
     }
 
     /**
@@ -54,9 +58,10 @@ export default class Exercise {
         const content = await this.app.vault.read(file);
         const pnHeading = cache?.headings?.find(h => h.heading === "Personal Notes");
         if (!pnHeading) {
-            const eMsg = `${this.notePath} note does not have a personal notes section.`;
+            const eMsg = `${this.notePath} note does not have a "Personal Notes" section. Leaving it blank.`;
             new Notice(eMsg);
-            throw Error(eMsg);
+            this.personalNotes = "";
+            return;
         }
         const pnStart = pnHeading.position.end.offset;
         const nextHeading = cache?.headings?.find(h => 
