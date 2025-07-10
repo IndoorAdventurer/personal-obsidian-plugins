@@ -4,12 +4,21 @@ import { App, Component, MarkdownRenderer } from "obsidian";
 
 
 /**
- * For showing the workout you are currently doing or are about to do.
+ * For showing the workout you are currently doing or are about to do. Once the
+ * workout is finished, it should show a different view.
  */
 export default class ActiveWorkoutView {
     workout: Workout;
     app: App;
     container: HTMLElement;
+
+    // Data for time tracking functionality:
+    timerID: number | null = null;
+    stopwatchStartTime: number | null = null;
+    workoutTimeSpan: HTMLSpanElement | null = null;
+    workoutBtn: HTMLButtonElement | null = null;
+    stopwatchTimeSpan: HTMLSpanElement | null = null;
+    stopwatchBtn: HTMLButtonElement | null = null;
 
     /**
      * @param workout Workout data object to draw
@@ -30,14 +39,101 @@ export default class ActiveWorkoutView {
         this.container.createEl("h2", {text: "Workout Session"}).style.marginBlockEnd = "0";
         this.container.createEl("b", {text: this.workout.workoutName}).style.color = "var(--text-muted)";
 
-        
-        // TODO: header for time tracking and break stopwatch
-        
+        this.drawTimingHeader();
         
         for (const e of this.workout.exercises) {
             const container = this.makeExerciseContainer(e, this.container);
             this.drawExerciseContent(e, container);
         }
+    }
+
+    /**
+     * draws a div that shows the total workout time (with options to start/stop)
+     * and an extra stopwatch for breaks.
+     * 
+     * @note decided to not make the stopwatch part of the Workout model as it
+     * does not need to be persistent and is a specific feature/widget of this
+     * specific view.
+     */
+    private drawTimingHeader() {
+
+        const header = this.container.createDiv({cls: "vincent-fitness-time-header"});
+
+        const workoutDiv = header.createDiv({cls: "vincent-fitness-time-header-inner"});
+        this.workoutTimeSpan = workoutDiv.createSpan();
+        this.workoutBtn = workoutDiv.createEl("button");
+
+        const stopwatchDiv = header.createDiv({cls: "vincent-fitness-time-header-inner"});
+        this.stopwatchTimeSpan = stopwatchDiv.createSpan();
+        this.stopwatchBtn = stopwatchDiv.createEl("button");
+
+        this.timedTimingHeaderRedraw();
+        this.timerID = window.setInterval(() => this.timedTimingHeaderRedraw(), 1000);
+
+        // Button handlers:
+        this.workoutBtn.addEventListener("click", () => {
+            if (this.workout.startTime === null)
+                this.workout.startTime = Date.now();
+            else {
+                this.workout.endTime = Date.now();
+                if (this.timerID)
+                    window.clearInterval(this.timerID);
+                // TODO: better logic for ending a workout. We should even
+                // show a different view now. And probably save everything ;-)
+            }
+            
+            this.timedTimingHeaderRedraw();
+        });
+        this.stopwatchBtn.addEventListener("click", () => {
+            this.stopwatchStartTime =
+                this.stopwatchStartTime === null ? Date.now() : null;
+            this.timedTimingHeaderRedraw();
+        });
+    }
+
+    /**
+     * Updates all stateful elements in the timing header (gets called every
+     * second).
+     */
+    private timedTimingHeaderRedraw() {
+        if (this.workout.endTime !== null)
+            return; // TODO: come up with something better maybe.. we need to
+                    // go to other view when this happens, actually.
+
+        // Workout state:
+        if (this.workout.startTime === null) {
+            this.workoutTimeSpan?.setText("00:00");
+            this.workoutBtn?.setText("Start Workout 🏋️");
+        } else {
+            this.workoutTimeSpan?.setText(
+                ActiveWorkoutView.formatTimeDelta(
+                    Date.now() - this.workout.startTime));
+            this.workoutBtn?.setText("End Workout 🛌");
+        }
+
+        // Stopwatch state:
+        if (this.stopwatchStartTime === null) {
+            this.stopwatchTimeSpan?.setText("00:00");
+            this.stopwatchBtn?.setText("Start Stopwatch ⏱️");
+        } else {
+            this.stopwatchTimeSpan?.setText(
+                ActiveWorkoutView.formatTimeDelta(
+                    Date.now() - this.stopwatchStartTime));
+            this.stopwatchBtn?.setText("Stop Stopwatch 🛑");
+        }
+
+    }
+
+    /**
+     * Given a time delta (the difference in ms between two moments, this method)
+     * returns formatted time MM:SS.
+     */
+    private static formatTimeDelta(delta: number): string {
+        let seconds = Math.floor(delta / 1000);
+        const minutes = Math.floor(seconds / 60);
+        seconds = seconds % 60;
+
+        return `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
     }
 
     /**
@@ -116,6 +212,7 @@ export default class ActiveWorkoutView {
             cls: "vincent-fitness-custom-heading"});
         const commentsSpace = el.createEl("textarea");
         commentsSpace.setAttr("placeholder", "How did it go?");
+        commentsSpace.value = ex.comment || "";
         commentsSpace.setAttr("rows", "3");
         commentsSpace.style.width = "100%";
         commentsSpace.addEventListener("change",
