@@ -1,19 +1,19 @@
 import { FitnessSet } from "model/exercise-session";
 import Workout, { WorkoutExerciseItem } from "model/workout";
-import { App, Component, MarkdownRenderer } from "obsidian";
+import { App, Component, MarkdownRenderChild, MarkdownRenderer } from "obsidian";
 
 
 /**
  * For showing the workout you are currently doing or are about to do. Once the
  * workout is finished, it should show a different view.
  */
-export default class ActiveWorkoutView {
+export default class ActiveWorkoutView extends MarkdownRenderChild {
     workout: Workout;
     app: App;
     container: HTMLElement;
 
     // Data for time tracking functionality:
-    timerID: number | null = null;
+    timerID: number | undefined = undefined;
     stopwatchStartTime: number | null = null;
     workoutTimeSpan: HTMLSpanElement | null = null;
     workoutBtn: HTMLButtonElement | null = null;
@@ -24,9 +24,12 @@ export default class ActiveWorkoutView {
      * @param workout Workout data object to draw
      * @param parent parent HTML element to draw the interface inside of.
      */
-    constructor(workout: Workout, app: App, parent: HTMLElement) {
+    constructor(parent: HTMLElement, app: App, workout: Workout) {
+        super(parent);
         this.workout = workout;
         this.app = app;
+        
+        parent.empty();
         this.container = parent.createDiv({cls: "active-workout-container"});
     }
     
@@ -34,7 +37,7 @@ export default class ActiveWorkoutView {
      * Draws the interactive user interface for a workout session. Clears
      * container first
      */
-    public drawWorkout() {
+    public onload() {
         this.container.empty()
         this.container.createEl("h2", {text: "Workout Session"}).style.marginBlockEnd = "0";
         this.container.createEl("b", {text: this.workout.workoutName}).style.color = "var(--text-muted)";
@@ -67,8 +70,10 @@ export default class ActiveWorkoutView {
         this.stopwatchTimeSpan = stopwatchDiv.createSpan();
         this.stopwatchBtn = stopwatchDiv.createEl("button");
 
+        // Making it refresh every second:
         this.timedTimingHeaderRedraw();
-        this.timerID = window.setInterval(() => this.timedTimingHeaderRedraw(), 1000);
+        this.timerID = window.setInterval(this.timedTimingHeaderRedraw.bind(this), 1000);
+        this.registerInterval(this.timerID);
 
         // Button handlers:
         this.workoutBtn.addEventListener("click", () => {
@@ -76,8 +81,8 @@ export default class ActiveWorkoutView {
                 this.workout.startTime = Date.now();
             else {
                 this.workout.endTime = Date.now();
-                if (this.timerID)
-                    window.clearInterval(this.timerID);
+                window.clearInterval(this.timerID);
+                this.timerID = undefined;
                 // TODO: better logic for ending a workout. We should even
                 // show a different view now. And probably save everything ;-)
             }
@@ -136,6 +141,48 @@ export default class ActiveWorkoutView {
         return `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
     }
 
+     /**
+     * Makes a container div to put the exercise contents into. Made to look like
+     * a callout and is collapsible.
+     * @param ex The exercise (to extract name from it)
+     * @param el The element to add this container to.
+     * @returns HTML element we can start putting stuff in
+     */
+    private makeExerciseContainer(
+        ex: WorkoutExerciseItem,
+        el: HTMLElement
+    ): HTMLElement {
+        // TODO: maybe also add those two outer ones
+        
+        // Creating the callout div:
+        const cDiv = el.createDiv(
+            {cls: "callout is-collapsible is-collapsed"})
+        cDiv.setAttr("data-callout", "note");
+        cDiv.setAttr("data-callout-fold", "-");
+
+        // Creating the title and arrow icon:
+        const titleDiv = cDiv.createDiv({cls: "callout-title"});
+        titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.notePath});
+        const icon = titleDiv.createDiv({cls: "callout-fold is-collapsed"});
+        icon.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="svg-icon lucide-chevron-down">
+            <path d="m6 9 6 6 6-6"></path>
+        </svg>`;
+
+        // And now the actual contents:
+        const contents = cDiv.createDiv({cls: "callout-content"});
+        contents.style.display = "none";
+
+        // Add animations:
+        this.animateExerciseContainer(cDiv, titleDiv, icon, contents);
+
+        // Add some spacing between exercises:
+        el.createDiv({cls: "vincent-fitness-padding-div"});
+        return contents;
+    }
+    
     /**
      * Visualizes al the data of a single exercise
      * @param ex The exercise
@@ -143,7 +190,11 @@ export default class ActiveWorkoutView {
      * exercise, because will clear on redraw).
      */
     private drawExerciseContent(ex: WorkoutExerciseItem, el: HTMLElement) {
-        // TODO: show link to note and possibly image here
+        // Cheap and dirty trick to link to exercise, but it works ^^
+        // (otherwise it was hard to get options to scroll-wheel click etc.)
+        this.renderMarkdown(
+            `<small>*[[${ex.exercise.notePath}|(Open Exercise Note)]]*</small>`,
+            el, "");
 
         // Showing personal notes:
         if (ex.exercise.personalNotes) {
@@ -156,7 +207,7 @@ export default class ActiveWorkoutView {
         // Showing last comment notes:
         if (ex.exercise.latestComment) {
             el.createEl("div", {
-                text: "Most recent comment",
+                text: "Most Recent Comment",
                 cls: "vincent-fitness-custom-heading"});
             this.renderMarkdown(ex.exercise.latestComment, el, "")
         }
@@ -217,6 +268,18 @@ export default class ActiveWorkoutView {
         commentsSpace.style.width = "100%";
         commentsSpace.addEventListener("change",
             () => ex.comment = commentsSpace.value);
+        
+        // Button to delete exercise from set:
+        el.createDiv({cls: "vincent-fitness-padding-div"});
+        const delExBtn = el.createEl("button", 
+            {cls: "mod-destructive", text: "Delete Exercise from Workout"});
+        delExBtn.addEventListener("click", () => {
+            const exIdx = this.workout.exercises.indexOf(ex);
+            if (exIdx !== -1) {
+                this.workout.exercises.splice(exIdx, 1);
+                this.onload(); // bit awkward naming, but this redraws everything
+            }
+        });
     }
 
     /**
@@ -254,48 +317,6 @@ export default class ActiveWorkoutView {
         }
 
         return [checkbox, reps, weight];
-    }
-
-    /**
-     * Makes a container div to put the exercise contents into. Made to look like
-     * a callout and is collapsible.
-     * @param ex The exercise (to extract name from it)
-     * @param el The element to add this container to.
-     * @returns HTML element we can start putting stuff in
-     */
-    private makeExerciseContainer(
-        ex: WorkoutExerciseItem,
-        el: HTMLElement
-    ): HTMLElement {
-        // TODO: maybe also add those two outer ones
-        
-        // Creating the callout div:
-        const cDiv = el.createDiv(
-            {cls: "callout is-collapsible is-collapsed"})
-        cDiv.setAttr("data-callout", "note");
-        cDiv.setAttr("data-callout-fold", "-");
-
-        // Creating the title and arrow icon:
-        const titleDiv = cDiv.createDiv({cls: "callout-title"});
-        titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.notePath});
-        const icon = titleDiv.createDiv({cls: "callout-fold is-collapsed"});
-        icon.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" class="svg-icon lucide-chevron-down">
-            <path d="m6 9 6 6 6-6"></path>
-        </svg>`;
-
-        // And now the actual contents:
-        const contents = cDiv.createDiv({cls: "callout-content"});
-        contents.style.display = "none";
-
-        // Add animations:
-        this.animateExerciseContainer(cDiv, titleDiv, icon, contents);
-
-        // Add some spacing between exercises:
-        el.createDiv({cls: "vincent-fitness-padding-div"});
-        return contents;
     }
 
     /**
@@ -362,6 +383,6 @@ export default class ActiveWorkoutView {
             "", // TODO: replace with path of exercise note for proper links.
             new Component()
         ).catch(() =>
-            console.log(`Markdown from "${sourcePath}" could not be shown.`));
+            console.error(`Markdown from "${sourcePath}" could not be shown.`));
     }
 };

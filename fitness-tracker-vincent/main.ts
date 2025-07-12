@@ -8,17 +8,14 @@ export default class FitnessPlugin extends Plugin {
 	
 	async onload() {
 		
-		
-		
-		
 		this.registerMarkdownCodeBlockProcessor("fitness-workout",
 			async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 				
 				const workout = await Workout.workoutFromYaml(source, this.app);
-				const aView = new ActiveWorkoutView(workout, this.app, el);
-				aView.drawWorkout();
+				const aView = new ActiveWorkoutView(el, this.app, workout);
+				ctx.addChild(aView);
+				aView.load();
 
-				console.log(workout);
 
 				// console.log(workout.toYaml());
 
