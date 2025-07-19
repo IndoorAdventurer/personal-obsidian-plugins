@@ -1,24 +1,54 @@
-import Exercise from 'model/exercise';
+import { MarkdownPostProcessorContext, Plugin } from 'obsidian';
 import Workout from 'model/workout';
-import { MarkdownPostProcessorContext, parseYaml, Plugin, stringifyYaml } from 'obsidian';
+import { FitnessAppSettings, FITNESSAPP_DEFAULT_SETTINGS } from 'model/settings-data';
 import ActiveWorkoutView from 'presentation/active-workout-view';
+import { FitnessAppSettingsTab } from 'presentation/settings-tab';
 
 
 export default class FitnessPlugin extends Plugin {
+
+	settings: FitnessAppSettings;
 	
 	async onload() {
 		
+		// Settings:
+		this.loadSettings();
+		this.addSettingTab(new FitnessAppSettingsTab(this.app, this));
+		
+		/**
+		 * For showing a UI inside a note for an individual workout session:
+		 */
 		this.registerMarkdownCodeBlockProcessor("fitness-workout",
 			async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 				
 				const workout = await Workout.workoutFromYaml(source, this.app);
+				
+				// TODO: change view based on active or not. Make switching class.
 				const aView = new ActiveWorkoutView(el, this.app, workout);
 				ctx.addChild(aView);
 				aView.load();
 
 
-				// console.log(workout.toYaml());
+				console.log(workout.toYaml());
 
+			}
+		)
+	}
+
+	// async onunload() {
+	// 	// Nothing yet
+	// }
+
+	async loadSettings() {
+		this.settings = Object.assign({}, FITNESSAPP_DEFAULT_SETTINGS, await this.loadData());
+	}
+
+	async saveSettings() {
+		this.saveData(this.settings)
+	}
+}
+
+// STUFF I had in the preprocessor before:
 				// console.log(ctx);
 				// console.log(el);
 				// console.log(ctx.getSectionInfo(el));
@@ -160,30 +190,6 @@ export default class FitnessPlugin extends Plugin {
 				// 		callout_content.style = "";
 				// 	}
 				// })
-			}
-		)
-
-		// const my_list = ["aap", "noot", "mies"];
-
-// 		const eg_yaml = `- aap
-// - noot   
-// - mies`
-// 		console.log(parseYaml(eg_yaml));
-
-	}
-
-	async onunload() {
-		// Nothing yet
-	}
-
-	// async loadSettings() {
-	// 	this.settings = Object.assign({}, ZETTELSUITE_DEFAULT_SETTINGS, await this.loadData());
-	// }
-
-	// async saveSettings() {
-	// 	this.saveData(this.settings)
-	// }
-}
 
 
 // <div class="el-div">

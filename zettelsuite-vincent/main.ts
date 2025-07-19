@@ -63,9 +63,9 @@ export default class ZettelSuitePlugin extends Plugin {
 		);
 	}
 
-	async onunload() {
-		// Nothing yet
-	}
+	// async onunload() {
+	// 	// Nothing yet
+	// }
 
 	/**
 	 * Create a MOC, fleeting note or permanent note
@@ -163,7 +163,7 @@ export default class ZettelSuitePlugin extends Plugin {
 	}
 
 	/**
-	 * shortcut for loading file:
+	 * Shortcut for loading file:
 	 */
 	async load_file(file_name: string) {
 		return await this.app.vault.adapter.read(file_name);

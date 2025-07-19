@@ -190,6 +190,8 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
      * exercise, because will clear on redraw).
      */
     private drawExerciseContent(ex: WorkoutExerciseItem, el: HTMLElement) {
+        el.empty();
+        
         // Cheap and dirty trick to link to exercise, but it works ^^
         // (otherwise it was hard to get options to scroll-wheel click etc.)
         this.renderMarkdown(
@@ -224,7 +226,6 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
             // Toogle if a set is done via checkbox:
             cb?.addEventListener("change", () => {
                 Workout.toggleSetDone(ex, set);
-                el.empty();
                 this.drawExerciseContent(ex, el);
             });
 
@@ -245,14 +246,12 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
         const addBtn = btnBox.createEl("button", {text: "Add Set"});
         addBtn.addEventListener("click", () => {
             Workout.addSet(ex);
-            el.empty();
             this.drawExerciseContent(ex, el);
         })
 
         const delBtn = btnBox.createEl("button", {text: "Delete Unfinished Sets"});
         delBtn.addEventListener("click", () => {
-            ex.todo = [];
-            el.empty();
+            Workout.deleteTodoSets(ex);
             this.drawExerciseContent(ex, el);
         })
 

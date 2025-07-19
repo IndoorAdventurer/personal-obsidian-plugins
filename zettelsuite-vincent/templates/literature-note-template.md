@@ -9,6 +9,7 @@ annotations: {{annotations_file}}
 title: {{title}}
 authors: {{authors}}
 published: {{pubdate}}
+reading-status:
 rating (0-10):
 ---
 # {{file_name}}

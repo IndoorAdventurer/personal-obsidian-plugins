@@ -40,8 +40,8 @@ export default class Workout {
         if (!name)
             throw Error(`Make sure you give your workout a name (workout-name: "Name")`);
         const wo = new Workout(name);
-        wo.startTime = yamlObj.startTime || null;
-        wo.endTime = yamlObj.endTime || null;
+        wo.startTime = Workout.humanReadableTimeToEpoch(yamlObj.startTime);
+        wo.endTime = Workout.humanReadableTimeToEpoch(yamlObj.endTime);
 
         // Parse the rest of the data. Either a new workout or a reload:
         if ("exercise-list" in yamlObj)
@@ -63,6 +63,8 @@ export default class Workout {
     public toYaml(): string {
         const data = {
             ...this,
+            startTime: Workout.epochTimeToHumanReadable(this.startTime),
+            endTime: Workout.epochTimeToHumanReadable(this.endTime),
             exercises: this.exercises.map(item => {
                 return {...item, exercise: item.exercise.notePath};
             })
@@ -109,6 +111,31 @@ export default class Workout {
             })
         }
     }
+
+    /**
+     * Turns a timestamp gotten from Date.now() into a human readable date string.
+     */
+    private static epochTimeToHumanReadable(timestamp: number | null): string | null{
+        if (!timestamp)
+            return null;
+        const date = new Date(timestamp);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hour = String(date.getHours()).padStart(2, "0");
+        const minute = String(date.getMinutes()).padStart(2, "0");
+        const second = String(date.getSeconds()).padStart(2, "0");
+        return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+    }
+
+    /**
+     * Turns a human readable date string YYYY-MM-DDTHH:MM:SS into epoch time
+     */
+    private static humanReadableTimeToEpoch(timestamp: string | undefined): number | null {
+        if (timestamp)
+            return new Date(timestamp).getTime();
+        return null;
+    }
     
     /**
      * Toggles set between done and not done.
@@ -143,5 +170,16 @@ export default class Workout {
             throw Error("Need at least one set so I know the units.");
         }
         exercise.todo.push(structuredClone(lastElement));
+    }
+
+    /**
+     * Deletes all todo sets from a given exercise.
+     */
+    static deleteTodoSets(exercise: WorkoutExerciseItem) {
+        if (exercise.done.length === 0) {
+            new Notice("Exercises must have at least one set.");
+            return;
+        }
+        exercise.todo = [];
     }
 };
