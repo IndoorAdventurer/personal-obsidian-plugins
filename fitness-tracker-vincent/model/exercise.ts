@@ -1,12 +1,15 @@
 import { App, CachedMetadata, normalizePath, Notice, TFile } from "obsidian";
 import { ExerciseSession, parseFitnessSet } from "./exercise-session";
+import { FitnessAppSettings } from "./settings-data";
 
 /**
  * Defines a fitness exercise (e.g. bench press).
  */
 export default class Exercise {
     app: App;
-    notePath: string;               // Note corresponding to this exercise.
+    settings: FitnessAppSettings;
+    fileName: string;               // Base name of the exercise note.
+    filePath: string;               // A full path you can use for proper linking.
     currentVolume: ExerciseSession; // How many sets/reps/kg you currently do.
     recordVolume: ExerciseSession;  // Highest volume ever lifted.
 
@@ -17,9 +20,11 @@ export default class Exercise {
      * Creates empty object. Call loadFromFile or other async functions to
      * populate fields.
      */
-    constructor(app: App) {
+    constructor(app: App, settings: FitnessAppSettings) {
         this.app = app;
-        this.notePath = "";
+        this.settings = settings
+        this.fileName = "";
+        this.filePath = "";
         this.currentVolume = [];
         this.recordVolume = [];
         this.personalNotes = "";
@@ -30,23 +35,35 @@ export default class Exercise {
      * Load all relevant data from an exercise note.
      */
     public async loadFromFile(fileName: string) {
-        // TODO: way more robust version for getting the file name. Will get
-        // back to this once I create settings because then i'll specify the
-        // exercise directory, which should be the first place to look (see
-        // zettelsuite code context menu code).
-        const file = this.app.vault
-            .getAbstractFileByPath(normalizePath(fileName + ".md"));
-        if (!file || !(file instanceof(TFile)))
+        const file = this.getAllExerciseFiles().find(file => 
+            file.basename.toLowerCase() === fileName.toLowerCase()
+        );
+
+        if (!file) // || !(file instanceof(TFile)))
             return;
         const cache = this.app.metadataCache.getFileCache(file);
         const frontmatter = cache?.frontmatter;
         
-        this.notePath = fileName;
+        this.fileName = fileName;
+        this.filePath = file.path;
         // currentVolume should be set, but I handle this in workout.ts:
         this.currentVolume = frontmatter?.["current-volume"].map(parseFitnessSet) || [];
         this.recordVolume = frontmatter?.["record-volume"]?.map(parseFitnessSet) || [];
         await this.parsePersonalNotes(file, cache);
         this.latestComment = frontmatter?.["latest-comment"] || "";
+    }
+
+    /**
+     * Returns a list of all files that define fitness-note-type: exercise in
+     * the YAML.
+     */
+    public getAllExerciseFiles() {
+        return this.app.vault.getMarkdownFiles()
+            .filter(file => {
+                const frontmatter =
+                    this.app.metadataCache.getFileCache(file)?.frontmatter;
+                return frontmatter?.["fitness-note-type"] === "exercise-note";
+            })
     }
 
     /**
@@ -58,7 +75,7 @@ export default class Exercise {
         const content = await this.app.vault.read(file);
         const pnHeading = cache?.headings?.find(h => h.heading === "Personal Notes");
         if (!pnHeading) {
-            const eMsg = `${this.notePath} note does not have a "Personal Notes" section. Leaving it blank.`;
+            const eMsg = `${this.fileName} note does not have a "Personal Notes" section. Leaving it blank.`;
             new Notice(eMsg);
             this.personalNotes = "";
             return;

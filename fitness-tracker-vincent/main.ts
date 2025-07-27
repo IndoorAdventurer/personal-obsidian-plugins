@@ -21,7 +21,7 @@ export default class FitnessPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("fitness-workout",
 			async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 				
-				const workout = await Workout.workoutFromYaml(source, this.app);
+				const workout = await Workout.workoutFromYaml(source, this.app, this.settings);
 				
 				// TODO: change view based on active or not. Make switching class.
 				const aView = new ActiveWorkoutView(el, this.app, workout);

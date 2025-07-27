@@ -162,7 +162,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
 
         // Creating the title and arrow icon:
         const titleDiv = cDiv.createDiv({cls: "callout-title"});
-        titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.notePath});
+        titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.fileName});
         const icon = titleDiv.createDiv({cls: "callout-fold is-collapsed"});
         icon.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -195,7 +195,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
         // Cheap and dirty trick to link to exercise, but it works ^^
         // (otherwise it was hard to get options to scroll-wheel click etc.)
         this.renderMarkdown(
-            `<small>*[[${ex.exercise.notePath}|(Open Exercise Note)]]*</small>`,
+            `<small>*[[${ex.exercise.filePath}|(Open Exercise Note)]]*</small>`,
             el, "");
 
         // Showing personal notes:
