@@ -1,13 +1,11 @@
 import { App, CachedMetadata, normalizePath, Notice, TFile } from "obsidian";
 import { ExerciseSession, parseFitnessSet } from "./exercise-session";
-import { FitnessAppSettings } from "./settings-data";
 
 /**
  * Defines a fitness exercise (e.g. bench press).
  */
 export default class Exercise {
     app: App;
-    settings: FitnessAppSettings;
     fileName: string;               // Base name of the exercise note.
     filePath: string;               // A full path you can use for proper linking.
     currentVolume: ExerciseSession; // How many sets/reps/kg you currently do.
@@ -20,9 +18,8 @@ export default class Exercise {
      * Creates empty object. Call loadFromFile or other async functions to
      * populate fields.
      */
-    constructor(app: App, settings: FitnessAppSettings) {
+    constructor(app: App) {
         this.app = app;
-        this.settings = settings
         this.fileName = "";
         this.filePath = "";
         this.currentVolume = [];

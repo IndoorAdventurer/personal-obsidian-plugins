@@ -1,7 +1,6 @@
 import { App, Notice, parseYaml, stringifyYaml } from "obsidian";
 import Exercise from "./exercise";
 import { ExerciseSession, FitnessSet } from "./exercise-session";
-import { FitnessAppSettings } from "./settings-data";
 
 /**
  * An exercise with some extra workout-specific data.
@@ -35,7 +34,7 @@ export default class Workout {
     /**
      * Factory function. Returns a `Workout` object from a yaml string
      */
-    static async workoutFromYaml(yamlStr: string, app: App, settings: FitnessAppSettings): Promise<Workout> {
+    static async workoutFromYaml(yamlStr: string, app: App): Promise<Workout> {
         try {
             const yamlObj = parseYaml(yamlStr);
             
@@ -48,9 +47,9 @@ export default class Workout {
     
             // Parse the rest of the data. Either a new workout or a reload:
             if ("exercise-list" in yamlObj)
-                await this.exercisesFromYamlFresh(yamlObj, wo, app, settings);
+                await this.exercisesFromYamlFresh(yamlObj, wo, app);
             else if ("exercises" in yamlObj)
-                await this.exercisesFromYamlReload(yamlObj, wo, app, settings);
+                await this.exercisesFromYamlReload(yamlObj, wo, app);
             else {
                 throw Error(`Can't parse workout. Make sure you specify "exercise-list".`);
             }
@@ -63,6 +62,21 @@ export default class Workout {
             }
             throw error;
         }
+    }
+
+    /**
+     * Add an exercise to this workout from a file name.
+     */
+    public async addExercise(fileName: string, app: App) {
+        const exercise = new Exercise(app);
+        await exercise.loadFromFile(fileName);
+
+        this.exercises.push({
+            exercise: exercise,
+            comment: "",
+            done: [],
+            todo: exercise.currentVolume
+        });
     }
 
     /**
@@ -85,21 +99,13 @@ export default class Workout {
      * Loading exercises from a fresh new workout (i.e. yaml written by human)
      */
     private static async exercisesFromYamlFresh(
-            yamlObj: any, wo: Workout, app: App, settings: FitnessAppSettings) {
+            yamlObj: any, wo: Workout, app: App) {
         for (const el of yamlObj["exercise-list"]) {
             if (!(el[0] && el[0][0] && typeof el[0][0] === "string" && el[0][0].length > 1)) {
                 throw Error("Make sure exercise-list is a list of [[WikiLinks]].");
             }
             
-            const exercise = new Exercise(app, settings);
-            await exercise.loadFromFile(el[0][0]);
-
-            wo.exercises.push({
-                exercise: exercise,
-                comment: "",
-                done: [],
-                todo: exercise.currentVolume
-            });
+            await wo.addExercise(el[0][0], app);
         }
     }
 
@@ -108,9 +114,9 @@ export default class Workout {
      * a workout had already started).
      */
     private static async exercisesFromYamlReload(
-            yamlObj: any, wo: Workout, app: App, settings: FitnessAppSettings) {
+            yamlObj: any, wo: Workout, app: App) {
         for (const data of yamlObj["exercises"]) {
-            const exercise = new Exercise(app, settings);
+            const exercise = new Exercise(app);
             await exercise.loadFromFile(data["exercise"]);
             
             wo.exercises.push({

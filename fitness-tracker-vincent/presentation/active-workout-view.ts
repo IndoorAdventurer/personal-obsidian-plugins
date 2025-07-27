@@ -1,6 +1,7 @@
 import { FitnessSet } from "model/exercise-session";
 import Workout, { WorkoutExerciseItem } from "model/workout";
-import { App, Component, MarkdownRenderChild, MarkdownRenderer } from "obsidian";
+import { App, Component, MarkdownRenderChild, MarkdownRenderer, Notice } from "obsidian";
+import SelectExerciseModal from "./select_exercise_modal";
 
 
 /**
@@ -48,6 +49,26 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
             const container = this.makeExerciseContainer(e, this.container);
             this.drawExerciseContent(e, container);
         }
+
+        this.createAddExerciseBtn();
+
+    }
+
+    /**
+     * Responsible for the "Add Exercise" button at the bottom for adding an
+     * exercise to the list.
+     */
+    private createAddExerciseBtn() {
+        const btn = this.container.createEl("button", {text: "Add Exercise"});
+        btn.addEventListener("click", () => {
+            const modal = new SelectExerciseModal(
+                this.app,
+                async (file) => {
+                    await this.workout.addExercise(file.basename, this.app)
+                    this.onload();
+                });
+            modal.open();
+        });
     }
 
     /**
