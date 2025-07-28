@@ -7,6 +7,7 @@ import { ExerciseSession, FitnessSet } from "./exercise-session";
  */
 export interface WorkoutExerciseItem {
     exercise: Exercise,         //   Which exercise it is.
+    workoutNote: string,        //   workout specific note (e.g. optional exercise).
     comment: string,            //   Comment the user writes down afterwards.
     done: ExerciseSession,      //   The completed sets.
     todo: ExerciseSession       //   The uncompleted sets.
@@ -67,12 +68,13 @@ export default class Workout {
     /**
      * Add an exercise to this workout from a file name.
      */
-    public async addExercise(fileName: string, app: App) {
+    public async addExercise(fileName: string, app: App, workoutNote: string = "") {
         const exercise = new Exercise(app);
         await exercise.loadFromFile(fileName);
 
         this.exercises.push({
             exercise: exercise,
+            workoutNote: workoutNote,
             comment: "",
             done: [],
             todo: exercise.currentVolume
@@ -131,13 +133,20 @@ export default class Workout {
      * Loading exercises from a fresh new workout (i.e. yaml written by human)
      */
     private static async exercisesFromYamlFresh(
-            yamlObj: any, wo: Workout, app: App) {
+                                        yamlObj: any, wo: Workout, app: App) {
         for (const el of yamlObj["exercise-list"]) {
             if (!(el[0] && el[0][0] && typeof el[0][0] === "string" && el[0][0].length > 1)) {
                 throw Error("Make sure exercise-list is a list of [[WikiLinks]].");
             }
             
-            await wo.addExercise(el[0][0], app);
+            const wikiContents = el[0][0].split("|");
+            wikiContents.forEach((s, idx) => wikiContents[idx] = s.trim());
+            
+            if (wikiContents.length === 1) {
+                await wo.addExercise(wikiContents[0], app);
+                return;
+            }
+            await wo.addExercise(wikiContents[0], app, wikiContents[1]);
         }
     }
 

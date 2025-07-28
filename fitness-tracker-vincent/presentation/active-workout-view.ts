@@ -201,6 +201,11 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
         })
 
         titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.fileName});
+
+        // Optionally showing tiny message like "Optional Exercise".
+        if (ex.workoutNote)
+            titleDiv.createEl("small", {text: `(${ex.workoutNote})`});
+
         const icon = titleDiv.createDiv({cls: "callout-fold is-collapsed"});
         icon.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
