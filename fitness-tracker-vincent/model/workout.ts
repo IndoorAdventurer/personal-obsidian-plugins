@@ -80,6 +80,38 @@ export default class Workout {
     }
 
     /**
+     * Delete en exercise from this workout.
+     * @returns 
+     */
+    public deleteExercise(ex: WorkoutExerciseItem) {
+        const exIdx = this.exercises.indexOf(ex);
+        if (exIdx !== -1) {
+            this.exercises.splice(exIdx, 1);
+            return;
+        }
+        throw Error("Exercise does not exist.");
+    }
+
+    /**
+     * Move an exercise up or down in the list
+     * @param ex The exercise to move
+     * @param relative Relative position (e.g. -1 for one up; +1 for one down).
+     */
+    public moveExercise(ex: WorkoutExerciseItem, relative: number) {
+        const exIdx = this.exercises.indexOf(ex);
+        if (exIdx === -1)
+            throw Error("Exercise does not exist.");
+
+        const newIdx = exIdx + relative;
+
+        if (newIdx < 0 || newIdx >= this.exercises.length)
+            return; // Do nothing. Also no error.
+
+        [this.exercises[exIdx], this.exercises[newIdx]] =
+            [this.exercises[newIdx], this.exercises[exIdx]];
+    }
+
+    /**
      * @returns string containing a yaml representation of this object
      */
     public toYaml(): string {

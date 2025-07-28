@@ -181,8 +181,25 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
         cDiv.setAttr("data-callout", "note");
         cDiv.setAttr("data-callout-fold", "-");
 
-        // Creating the title and arrow icon:
+        // Creating the title and arrow icons:
         const titleDiv = cDiv.createDiv({cls: "callout-title"});
+
+        // Move this exercise up in the workout session
+        const mvUpBtn = titleDiv.createEl("b", {text: "↑"});
+        mvUpBtn.addEventListener("click", ev => {
+            ev.stopPropagation();
+            this.workout.moveExercise(ex, -1);
+            this.onload();
+        })
+
+        // Move this exercise down in the workout session
+        const mvDownBtn = titleDiv.createEl("b", {text: "↓"});
+        mvDownBtn.addEventListener("click", ev => {
+            ev.stopPropagation();
+            this.workout.moveExercise(ex, +1);
+            this.onload();
+        })
+
         titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.fileName});
         const icon = titleDiv.createDiv({cls: "callout-fold is-collapsed"});
         icon.innerHTML = `
@@ -224,7 +241,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
             el.createEl("div", {
                 text: "Personal Notes",
                 cls: "vincent-fitness-custom-heading"});
-            this.renderMarkdown(ex.exercise.personalNotes, el, "")
+            this.renderMarkdown(ex.exercise.personalNotes, el, ex.exercise.filePath);
         }
 
         // Showing last comment notes:
@@ -232,7 +249,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
             el.createEl("div", {
                 text: "Most Recent Comment",
                 cls: "vincent-fitness-custom-heading"});
-            this.renderMarkdown(ex.exercise.latestComment, el, "")
+            this.renderMarkdown(ex.exercise.latestComment, el, ex.exercise.filePath);
         }
 
         // Showing sets:
@@ -294,11 +311,8 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
         const delExBtn = el.createEl("button", 
             {cls: "mod-destructive", text: "Delete Exercise from Workout"});
         delExBtn.addEventListener("click", () => {
-            const exIdx = this.workout.exercises.indexOf(ex);
-            if (exIdx !== -1) {
-                this.workout.exercises.splice(exIdx, 1);
-                this.onload(); // bit awkward naming, but this redraws everything
-            }
+            this.workout.deleteExercise(ex);
+            this.onload();
         });
     }
 
