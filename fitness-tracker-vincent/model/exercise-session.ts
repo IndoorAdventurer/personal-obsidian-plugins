@@ -5,7 +5,7 @@ const kgAlias = ["kg", "kilogram", "kilo", "kilos"];
  */
 const unitAliasList = {
     "kg": kgAlias,
-    "kg per dumbbell": [" per dumbbell", "/dumbbell", " p.d.", " pd", "pd"]
+    "kg/dumbbell": [" per dumbbell", "/dumbbell", " p.d.", " pd", "pd"]
         .flatMap(pd => kgAlias.map(kg => kg + pd)),
     "bodyweight": ["bodyweight"]
 };
@@ -63,6 +63,15 @@ export function parseFitnessSet(data: string): FitnessSet {
 }
 
 /**
+ * Returns string representation from fitness set.
+ */
+export function serializeFitnessSet(set: FitnessSet): string {
+    if (set.unit === "bodyweight")
+        return `${set.repetitions}x`;
+    return `${set.repetitions} x ${set.weight} ${set.unit}`;
+}
+
+/**
  * Returns the normalized form of a fitness unit from the input
  * (e.g. kilogram pd -> kg/dumbbell)
  */
@@ -75,8 +84,20 @@ function normalizeUnit(unit: string) {
 }
 
 /**
+ * Computes the total load of an Exercise session, which is basically just
+ * sets x reps x weight.
+ * @param session 
+ * @returns 
+ */
+export function computeVolume(session: ExerciseSession) {
+    // TODO: unit-specific mods: scale lbs to kg; multiply by 2 for per dumbbell
+    return session
+        .map(set => set.repetitions * set.weight)
+        .reduce((sum, n) => sum + n, 0);
+}
+
+/**
  * TODO functions for:
  * - writing ExerciseSession down as yaml
- * - calculating total load so I can say if I broke any records (total volume is just everything multiplied)
  * - calculating 1RM so I can track that too. [optional]
  */

@@ -66,6 +66,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
                 async (file) => {
                     await this.workout.addExercise(file.basename, this.app)
                     this.onload();
+                    this.workout.saveFn?.(this.workout.toYaml());
                 });
             modal.open();
         });
@@ -106,6 +107,10 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
                 this.timerID = undefined;
                 // TODO: better logic for ending a workout. We should even
                 // show a different view now. And probably save everything ;-)
+
+                // Saving (too lazy to make a dedicated method for this. Bad
+                // encapsulation, I know..):
+                this.workout.saveFn?.(this.workout.toYaml());
             }
             
             this.timedTimingHeaderRedraw();
@@ -190,6 +195,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
             ev.stopPropagation();
             this.workout.moveExercise(ex, -1);
             this.onload();
+            // Meh not saving. Too awkward..
         })
 
         // Move this exercise down in the workout session
@@ -198,6 +204,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
             ev.stopPropagation();
             this.workout.moveExercise(ex, +1);
             this.onload();
+            // Meh not saving here either. Too awkward lol.
         })
 
         titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.fileName});
@@ -266,10 +273,16 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
         const processSet = (set: FitnessSet) => {
             const [cb, repsI, weightI] = this.drawSet(set, el, status);
             
-            // Toogle if a set is done via checkbox:
-            cb?.addEventListener("change", () => {
+            // Toggle if a set is done via checkbox:
+            cb?.addEventListener("change", async () => {
                 Workout.toggleSetDone(ex, set);
                 this.drawExerciseContent(ex, el);
+
+                // We save when all sets are done:
+                if (ex.todo.length === 0) {
+                    this.updateAndSaveExercise(ex);
+                    this.workout.saveFn?.(this.workout.toYaml());
+                }
             });
 
             // Reps changed (no need to redraw: user kinda did it for us):
@@ -290,13 +303,14 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
         addBtn.addEventListener("click", () => {
             Workout.addSet(ex);
             this.drawExerciseContent(ex, el);
-        })
+        });
 
         const delBtn = btnBox.createEl("button", {text: "Delete Unfinished Sets"});
         delBtn.addEventListener("click", () => {
             Workout.deleteTodoSets(ex);
             this.drawExerciseContent(ex, el);
-        })
+            this.updateAndSaveExercise(ex);
+        });
 
         // Area to comment on how exercise went
         el.createDiv({cls: "vincent-fitness-padding-div"});
@@ -318,7 +332,18 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
         delExBtn.addEventListener("click", () => {
             this.workout.deleteExercise(ex);
             this.onload();
+            this.workout.saveFn?.(this.workout.toYaml());
         });
+    }
+
+    private async updateAndSaveExercise(ex: WorkoutExerciseItem) {
+        ex.exercise.registerVolume(ex.done);
+        if (ex.comment)
+            ex.exercise.latestComment = ex.comment;
+
+        await ex.exercise.saveExercise();
+
+        new Notice(`Updated the "${ex.exercise.fileName}" note.`);
     }
 
     /**
@@ -419,7 +444,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
             this.app,
             markdown,
             el,
-            "", // TODO: replace with path of exercise note for proper links.
+            sourcePath,
             new Component()
         ).catch(() =>
             console.error(`Markdown from "${sourcePath}" could not be shown.`));

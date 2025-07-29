@@ -1,10 +1,11 @@
 import { App, CachedMetadata, normalizePath, Notice, TFile } from "obsidian";
-import { ExerciseSession, parseFitnessSet } from "./exercise-session";
+import { computeVolume, ExerciseSession, parseFitnessSet, serializeFitnessSet } from "./exercise-session";
 
 /**
  * Defines a fitness exercise (e.g. bench press).
  */
 export default class Exercise {
+    
     app: App;
     fileName: string;               // Base name of the exercise note.
     filePath: string;               // A full path you can use for proper linking.
@@ -48,6 +49,30 @@ export default class Exercise {
         this.recordVolume = frontmatter?.["record-volume"]?.map(parseFitnessSet) || [];
         await this.parsePersonalNotes(file, cache);
         this.latestComment = frontmatter?.["latest-comment"] || "";
+    }
+
+    /**
+     * Registers a new volume. Potentially new record volume.
+     */
+    public registerVolume(volume: ExerciseSession) {
+        this.currentVolume = volume;
+        if (computeVolume(volume) > computeVolume(this.recordVolume))
+            this.recordVolume = volume;
+    }
+
+    /**
+     * Saves current volume, record volume, and latest comment.
+     */
+    public async saveExercise() {
+        const file = this.app.vault.getAbstractFileByPath(this.filePath);
+        if (!file || !(file instanceof TFile))
+            throw Error("Could not recognize exercise file while saving workout.");
+
+        await this.app.fileManager.processFrontMatter(file, fm => {
+            fm["current-volume"] = this.currentVolume.map(set => serializeFitnessSet(set));
+            fm["record-volume"] = this.recordVolume.map(set => serializeFitnessSet(set));
+            fm["latest-comment"] = this.latestComment;
+        })
     }
 
     /**

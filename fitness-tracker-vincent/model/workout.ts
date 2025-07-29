@@ -14,9 +14,11 @@ export interface WorkoutExerciseItem {
 };
 
 export default class Workout {
+    
     workoutName: string;        // E.g. Leg Day Workout
     startTime: number | null;   // Unix time when we started the exercise
     endTime: number | null;     // Unix time when we ended the exercise
+    saveFn: ((yaml: string) => void) | null; // Responsible for saving yaml
 
     // List of exercises for this workout:
     exercises: WorkoutExerciseItem[];
@@ -30,12 +32,22 @@ export default class Workout {
         this.startTime = null;
         this.endTime = null;
         this.exercises = [];
+        this.saveFn = null;
     }
 
     /**
      * Factory function. Returns a `Workout` object from a yaml string
+     * @param yamlStr the yaml string to construct object from
+     * @param app the Obsidian App object
+     * @param saveFn Function that is responsible for saving. Gets called with
+     * yaml representation whenever saving is needed.
+     * @returns 
      */
-    static async workoutFromYaml(yamlStr: string, app: App): Promise<Workout> {
+    static async workoutFromYaml(
+            yamlStr: string,
+            app: App,
+            saveFn: (yaml: string) => void
+        ): Promise<Workout> {
         try {
             const yamlObj = parseYaml(yamlStr);
             
@@ -45,7 +57,7 @@ export default class Workout {
             const wo = new Workout(name);
             wo.startTime = Workout.humanReadableTimeToEpoch(yamlObj.startTime);
             wo.endTime = Workout.humanReadableTimeToEpoch(yamlObj.endTime);
-    
+            
             // Parse the rest of the data. Either a new workout or a reload:
             if ("exercise-list" in yamlObj)
                 await this.exercisesFromYamlFresh(yamlObj, wo, app);
@@ -54,6 +66,8 @@ export default class Workout {
             else {
                 throw Error(`Can't parse workout. Make sure you specify "exercise-list".`);
             }
+
+            wo.saveFn = saveFn;
             
             return wo;
             
@@ -123,7 +137,8 @@ export default class Workout {
             endTime: Workout.epochTimeToHumanReadable(this.endTime),
             exercises: this.exercises.map(item => {
                 return {...item, exercise: item.exercise.fileName};
-            })
+            }),
+            saveFn: undefined
         };
 
         return stringifyYaml(data);
@@ -144,7 +159,7 @@ export default class Workout {
             
             if (wikiContents.length === 1) {
                 await wo.addExercise(wikiContents[0], app);
-                return;
+                continue;
             }
             await wo.addExercise(wikiContents[0], app, wikiContents[1]);
         }

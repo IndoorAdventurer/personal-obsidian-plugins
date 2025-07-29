@@ -20,8 +20,23 @@ export default class FitnessPlugin extends Plugin {
 		 */
 		this.registerMarkdownCodeBlockProcessor("fitness-workout",
 			async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-				
-				const workout = await Workout.workoutFromYaml(source, this.app, this.settings);
+								
+				const workout = await Workout.workoutFromYaml(
+					source, this.app, yaml => {
+						
+						// Overwriting codeblock with updated yaml contents:
+						const sInfo = ctx.getSectionInfo(el);
+						if (!sInfo) throw Error("Could not find block");
+						const {lineStart, lineEnd} = sInfo;
+
+						const editor = this.app.workspace.activeEditor?.editor;
+						if (!editor) throw Error("No active editor!");
+
+						yaml = "```fitness-workout\n" + yaml + "```\n";
+						
+						editor.replaceRange(yaml,
+							{line: lineStart, ch: 0}, {line: lineEnd+1, ch:0});
+					});
 				
 				// TODO: change view based on active or not. Make switching class.
 				const aView = new ActiveWorkoutView(el, this.app, workout);
@@ -48,127 +63,7 @@ export default class FitnessPlugin extends Plugin {
 	}
 }
 
-// STUFF I had in the preprocessor before:
-				// console.log(ctx);
-				// console.log(el);
-				// console.log(ctx.getSectionInfo(el));
-				// const sInfo = ctx.getSectionInfo(el);
-				// if (!sInfo) throw Error("Could not find block");
-				// const {lineStart, lineEnd} = sInfo;
-
-				// const newBlock = '```fitness-workout\nworkout-name: "Hoi"\nexercise-list:\n - [[Dumbbell Bench Press]]\n```\n';
-				
-				// const editor = this.app.workspace.activeEditor?.editor;
-				// if (!editor) throw Error("No active editor!");
-
-				// setTimeout(() => {
-				// 	editor.replaceRange(newBlock, {line: lineStart, ch: 0}, {line: lineEnd+1, ch:0});
-				// 	console.log("Change made!");
-				// }, 5000);
-				
-				// console.log("Loading exercise file")
-				
-				// const exercise = new Exercise(this.app);
-				// await exercise.loadFromFile("Dumbbell Bench Press");
-				
-				
-				
-				// const workout: Workout = {
-				// 	workoutName: "Push Day Workout",
-				// 	startTime: 100,
-				// 	endTime: null,
-				// 	exercises: [
-				// 		{
-				// 			exercise: {
-				// 				notePath: "Dumbbell bench press",
-				// 				currentVolume: [],
-				// 				recordVolume: [],
-				// 				personalNotes: "Keep going.",
-				// 				latestComment: "Went well."
-				// 			},
-				// 			comment: "Went well",
-				// 			done: [
-				// 				{repetitions: 10, weight: 20, unit: "kg"},
-				// 			],
-				// 			todo: [
-				// 				{repetitions: 10, weight: 30, unit: "kg"},
-				// 				{repetitions: 10, weight: 40, unit: "kg"},
-				// 			]
-				// 		},
-				// 		{
-				// 			exercise: {
-				// 				notePath: "Assisted pull-ups",
-				// 				currentVolume: [],
-				// 				recordVolume: [],
-				// 				personalNotes: "Keep **going**.\n - Aaap\n - Noot\n - Mies",
-				// 				latestComment: "Went well."
-				// 			},
-				// 			comment: "Went well",
-				// 			done: [],
-				// 			todo: [
-				// 				{repetitions: 10, weight: 1, unit: "bodyweight"},
-				// 				{repetitions: 10, weight: 1, unit: "bodyweight"},
-				// 			]
-				// 		},
-				// 		{
-				// 			exercise: {
-				// 				notePath: "Romanian deadlifts",
-				// 				currentVolume: [],
-				// 				recordVolume: [],
-				// 				personalNotes: "This one was ~~not~~ hard!",
-				// 				latestComment: ""
-				// 			},
-				// 			comment: "Went well",
-				// 			done: [],
-				// 			todo: []
-				// 		},
-				// 	]
-				// };
-
-				// const aView = new ActiveWorkoutView(workout, this.app, el);
-				// aView.drawWorkout();
-				
-
-
-				// const rows = source.split('\n').filter((row) => row.length > 0);
-
-				
-				// // Now test with callout:
-				// const callout = el.createDiv("callout");
-				// callout.setAttribute("data-callout", "info");
-				// callout.setAttribute("data-callout-fold", "-");
-				// callout.addClass("callout", "is-collapsible", "is-collapsed")
-				
-				// const callout_title = callout.createDiv("callout-title");
-				
-				// const titleText = callout_title.createDiv("callout-title-inner");
-				// titleText.textContent = "Super Geile Callout";
-
-				// const collapse_icon = callout_title.createDiv("callout-icon");
-				// collapse_icon.addClass("callout-fold", "is-collapsed")
-				// collapse_icon.innerHTML = `
-				// <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-				// 	viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-				// 	stroke-linejoin="round" class="svg-icon lucide-chevron-down">
-				// 	<path d="m6 9 6 6 6-6"></path>
-				// </svg>`;
-				// const callout_content = callout.createDiv("callout-content");
-				// callout_content.style.display = "none";
-				// // const my_content = callout_content.createDiv();
-				// // my_content.textContent = "Dag iedereeen!!! ^^";
-
-				// const table = callout_content.createEl('table');
-				// const body = table.createEl('tbody');
-
-				// for (let i = 0; i < rows.length; i++) {
-				// 	const cols = rows[i].split(',');
-
-				// 	const row = body.createEl('tr');
-
-				// 	for (let j = 0; j < cols.length; j++) {
-				// 		row.createEl('td', { text: cols[j] });
-				// 	}
-				// }
+// STUFF I had in the preprocessor before
 
 				// // Adding an image:
 				// console.log(this.app.vault.adapter.getResourcePath("https://upload.wikimedia.org/wikipedia/commons/4/43/Maarten_van_Rossem_-_2025_%28001%29_%28cropped%29.jpg"));
