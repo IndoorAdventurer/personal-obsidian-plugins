@@ -72,6 +72,15 @@ You can add contextual comments to specific exercises for this particular workou
 
 These comments are specific to this workout instance and are different from the general form cues stored in your exercise notes.
 
+### Set Format
+
+Record your sets using the format `REPS x [WEIGHT UNIT]`:
+
+- **Bodyweight exercises**: `10x`
+- **Weighted exercises**: `10x 15 kg` or `8x 20 kg/dumbbell`
+
+The plugin accepts flexible spacing and various unit aliases (kilogram, kg/dumbbell, etc.).
+
 ### During Your Workout
 
 When you open a daily note with a workout codeblock, the plugin provides:
@@ -79,7 +88,11 @@ When you open a daily note with a workout codeblock, the plugin provides:
 1. **Set Tracking**: Check off completed sets as you finish them
 2. **Weight/Reps Updates**: Modify weights or reps on the fly—changes automatically sync to your exercise notes
 3. **Personal Comments**: View your saved form cues and reminders for each exercise
-4. **Progress Notes**: Add notes about how the workout went for future reference (e.g. "Went well. Should go up 1 kg next time.")
+4. **Progress Notes**: Add notes about how the workout went for future reference
+
+### After Your Workout
+
+Once completed, the workout interface transforms into a summary table showing all your completed sets, weights, and reps for easy review.
 
 ### Exercise Notes Features
 
