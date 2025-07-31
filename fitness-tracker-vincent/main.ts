@@ -3,6 +3,7 @@ import Workout from 'model/workout';
 import { FitnessAppSettings, FITNESSAPP_DEFAULT_SETTINGS } from 'model/settings-data';
 import ActiveWorkoutView from 'presentation/active-workout-view';
 import { FitnessAppSettingsTab } from 'presentation/settings-tab';
+import CompletedWorkoutView from 'presentation/completed-workout-view';
 
 
 export default class FitnessPlugin extends Plugin {
@@ -38,13 +39,21 @@ export default class FitnessPlugin extends Plugin {
 							{line: lineStart, ch: 0}, {line: lineEnd+1, ch:0});
 					});
 				
-				// TODO: change view based on active or not. Make switching class.
-				const aView = new ActiveWorkoutView(el, this.app, workout);
-				ctx.addChild(aView);
-				aView.load();
+				// TODO: I should actually use a switching class, but it happens
+				// to call this preprocessor function again whenever any
+				// changes are made to the underlying code block (but bit
+				// dangerous to rely on that, of course).
+				if (workout.endTime === null) {
+					const aView = new ActiveWorkoutView(el, this.app, workout);
+					ctx.addChild(aView);
+					aView.load();
+				} else {
+					const cView = new CompletedWorkoutView(el, this.app, workout);
+					ctx.addChild(cView);
+					cView.load();
+				}
 
-
-				console.log(workout.toYaml());
+				// console.log(workout.toYaml());
 
 			}
 		)
