@@ -8,6 +8,7 @@
 }
 
 .vincent-fitness-set {
+    overflow-x: auto;
     background-color: var(--background-primary);
     margin-bottom: 0.3em;
     padding: 0.5em;
