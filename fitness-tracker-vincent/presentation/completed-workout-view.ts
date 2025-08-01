@@ -75,8 +75,16 @@ export default class CompletedWorkoutView extends MarkdownRenderChild {
         for (const ex of this.workout.exercises) {
             const bodyRow = body.createEl("tr");
             
-            // Maybe turn into link!
-            bodyRow.createEl("td", {text: ex.exercise.fileName});
+            // WikiLink to exercise note:
+            bodyRow.createEl("td").createEl("a", {
+                text: ex.exercise.fileName,
+                cls: "internal-link",
+                attr: {
+                    'data-href': ex.exercise.filePath,
+                    'href': ex.exercise.filePath,
+                    'rel': 'noopener'
+                }
+            });
 
             const setsCell = bodyRow.createEl("td");
             const mDatProp = setsCell.createDiv({cls: "metadata-property"});

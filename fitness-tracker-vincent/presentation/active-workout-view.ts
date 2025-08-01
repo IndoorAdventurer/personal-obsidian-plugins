@@ -209,6 +209,16 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
 
         titleDiv.createDiv({cls: "callout-title-inner", text: ex.exercise.fileName});
 
+        titleDiv.createEl("a", {
+            text: "🔗",
+            cls: "internal-link",
+            attr: {
+                'data-href': ex.exercise.filePath,
+                'href': ex.exercise.filePath,
+                'rel': 'noopener'
+            }
+        });
+
         // Optionally showing tiny message like "Optional Exercise".
         if (ex.workoutNote)
             titleDiv.createEl("small", {text: `(${ex.workoutNote})`});
@@ -241,12 +251,8 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
      */
     private drawExerciseContent(ex: WorkoutExerciseItem, el: HTMLElement) {
         el.empty();
-        
-        // Cheap and dirty trick to link to exercise, but it works ^^
-        // (otherwise it was hard to get options to scroll-wheel click etc.)
-        this.renderMarkdown(
-            `<small>*[[${ex.exercise.filePath}|(Open Exercise Note)]]*</small>`,
-            el, "");
+
+        el.createDiv({cls: "vincent-fitness-padding-div"});
 
         // Showing personal notes:
         if (ex.exercise.personalNotes) {
@@ -372,6 +378,7 @@ export default class ActiveWorkoutView extends MarkdownRenderChild {
                 type: "number",
                 cls: "vincent-fitness-set-number-input",
                 value: set.weight.toString()});
+            weight.setAttr("step", "any");
             div.createEl("span", {text: set.unit});
         }
 

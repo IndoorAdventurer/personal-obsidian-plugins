@@ -188,8 +188,9 @@ export default class ZettelSuitePlugin extends Plugin {
 	 */
 	private resolveTemplatePath(note_type: keyof typeof this.template_files): string {
 		const settings_key = this.settings_keys[note_type] as keyof ZettelSuiteSettings;
-		if (this.settings[settings_key] && typeof this.settings[settings_key] === "string")
-			return this.settings[settings_key];
+		const sKey = this.settings[settings_key];
+		if (sKey && typeof sKey === "string")
+			return sKey;
 		return this.template_files[note_type]
 	}
 

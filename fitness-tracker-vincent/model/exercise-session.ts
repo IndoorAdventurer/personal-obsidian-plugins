@@ -37,7 +37,7 @@ export function parseFitnessSet(data: string): FitnessSet {
     const repsRegex = "\\s*(\\d+)\\s*x\\s*";
 
     // Parsing NUMBER UNIT
-    const weigtUnitRegex = "(\\d+)\\s*([a-zA-Z./ ]+)\\s*";
+    const weigtUnitRegex = "(\\d+(?:[.,]\\d+)?)\\s*([a-zA-Z./ ]+)\\s*";
 
     // Total regex: reps and optional weight+unit:
     const totalRegex = new RegExp(`^${repsRegex}(?:${weigtUnitRegex})?\$`);
